@@ -1,0 +1,65 @@
+# Build directories
+/bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.csproj.user
+*.vcxproj.user
+*.pidb
+*.svd
+
+# Auto-generated files
+*.ide
+*.ncb
+*.sdf
+*.opensdf
+*.log
+*.tlog
+*.vspscc
+
+# Visual Studio / Rider / JetBrains
+.vs/
+.vscode/
+.idea/
+
+# NuGet packages
+*.nupkg
+packages/
+.nuget/
+
+# ASP.NET / Web
+*.dbmdl
+*.pdb
+*.publishsettings
+*.publish.xml
+*.db
+
+# Rider-specific
+.idea/
+*.sln.iml
+
+# Mono Auto Generated Files
+mono_crash.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# DotNet temporary files
+*.dotCover
+*.dotTrace
+*.dotMemory
+
+# Entity Framework / Migrations
+Migrations/
+*.snap
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
