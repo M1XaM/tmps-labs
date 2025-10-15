@@ -11,7 +11,7 @@
 ## Used Design Patterns:
 - Factory Pattern - For creating vehicles without specifying exact classes
 - Singleton Pattern - For ensuring only one instance of logger exists
-- Builder Pattern - For constructing complex vehicle configurations step by step
+- Prototype Pattern - For creating new vehicles by cloning existing prototypes
 
 ## Implementation
 
@@ -60,29 +60,42 @@ class VehicleLogger
 }
 ```
 
-
-### Builder Pattern
-Constructs vehicles through a step-by-step process with a fluent interface.
+### Prototype Pattern
+Creates new objects by cloning existing prototypes, avoiding expensive creation logic.
 
 ```csharp
-class VehicleBuilder
+interface IVehicle
 {
-    private string _type = "car";
-    
-    public VehicleBuilder SetType(string type)
+    void Move();
+    IVehicle Clone();
+}
+
+class Car : IVehicle
+{
+    public void Move()
     {
-        _type = type;
-        return this;
+        Console.WriteLine("The car is driving on the road.");
     }
     
-    public IVehicle Build()
+    public IVehicle Clone()
     {
-        var factory = new VehicleFactory();
-        return factory.CreateVehicle(_type);
+        return new Car(); // Create new instance as clone
     }
 }
 
-IVehicle builtCar = new VehicleBuilder().SetType("car").Build();
+class VehiclePrototype
+{
+    private IVehicle _carPrototype = new Car();
+    private IVehicle _bikePrototype = new Bicycle();
+    
+    public IVehicle CreateCar() => _carPrototype.Clone();
+    public IVehicle CreateBicycle() => _bikePrototype.Clone();
+}
+
+// Usage
+VehiclePrototype prototype = new VehiclePrototype();
+IVehicle clonedCar = prototype.CreateCar();
+IVehicle clonedBike = prototype.CreateBicycle();
 ```
 
 ## Results
