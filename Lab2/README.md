@@ -84,4 +84,4 @@ public class CarComponent
 ```
 
 ## Results
-<img src="img/result.png"/>
+<img src="img/result.png" />

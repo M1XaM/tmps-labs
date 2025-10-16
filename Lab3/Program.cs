@@ -1,136 +1,150 @@
 ﻿using System;
 using System.Collections.Generic;
 
-// Observer Pattern - Vehicle Event Notifications
-interface IObserver
+interface IDriveMode
 {
-    void Update(string eventType);
+    void Accelerate();
 }
 
-class VehicleEventNotifier
+class EcoMode : IDriveMode
 {
-    private List<IObserver> _observers = new List<IObserver>();
+    public void Accelerate() => Console.WriteLine("Eco: Slow acceleration");
+}
+
+class SportMode : IDriveMode
+{
+    public void Accelerate() => Console.WriteLine("Sport: Fast acceleration");
+}
+
+interface IWatcher
+{
+    void Notify(string message);
+}
+
+class Dashboard : IWatcher
+{
+    public void Notify(string message) => Console.WriteLine($"Dashboard: {message}");
+}
+
+class Telemetry : IWatcher
+{
+    public void Notify(string message) => Console.WriteLine($"Telemetry: {message}");
+}
+
+class LoggingSystem : IWatcher
+{
+    public void Notify(string message) => Console.WriteLine($"Logging: {message}");
+}
+
+class Notifier
+{
+    private List<IWatcher> _watchers = new List<IWatcher>();
     
-    public void Attach(IObserver observer) => _observers.Add(observer);
-    public void Detach(IObserver observer) => _observers.Remove(observer);
+    public void AddWatcher(IWatcher watcher) => _watchers.Add(watcher);
+    public void RemoveWatcher(IWatcher watcher) => _watchers.Remove(watcher);
     
-    public void Notify(string eventType)
+    public void SendMessage(string message)
     {
-        foreach (var observer in _observers)
-            observer.Update(eventType);
+        foreach (var watcher in _watchers)
+            watcher.Notify(message);
     }
 }
 
-class Dashboard : IObserver
+interface ICarState
 {
-    public void Update(string eventType)
+    void Start(Car car);
+    void Stop(Car car);
+}
+
+class ParkedState : ICarState
+{
+    public void Start(Car car)
     {
-        Console.WriteLine($"Dashboard: Vehicle {eventType}");
+        Console.WriteLine("Starting from parked...");
+        car.SetState(new RunningState());
+    }
+    
+    public void Stop(Car car)
+    {
+        Console.WriteLine("Already parked!");
     }
 }
 
-// Strategy Pattern - Braking Behavior
-interface IBrakingBehavior
+class RunningState : ICarState
 {
-    void Brake();
-}
-
-class StandardBraking : IBrakingBehavior
-{
-    public void Brake() => Console.WriteLine("Standard braking with 70% force");
-}
-
-class ABSBraking : IBrakingBehavior
-{
-    public void Brake() => Console.WriteLine("ABS braking with pulsating brakes");
-}
-
-// Command Pattern - Vehicle Commands
-interface ICommand
-{
-    void Execute();
-}
-
-class IgnitionCommand : ICommand
-{
-    private VehicleEventNotifier _notifier;
-    
-    public IgnitionCommand(VehicleEventNotifier notifier) => _notifier = notifier;
-    
-    public void Execute()
+    public void Start(Car car)
     {
-        Console.WriteLine("Starting ignition...");
-        _notifier.Notify("ignition started");
+        Console.WriteLine("Already running!");
+    }
+    
+    public void Stop(Car car)
+    {
+        Console.WriteLine("Stopping...");
+        car.SetState(new ParkedState());
     }
 }
 
-class BrakeCommand : ICommand
+class Car
 {
-    private IBrakingBehavior _brakingBehavior;
+    private IDriveMode _driveMode;
+    private ICarState _state;
+    private Notifier _notifier = new Notifier();
     
-    public BrakeCommand(IBrakingBehavior brakingBehavior) => _brakingBehavior = brakingBehavior;
-    
-    public void Execute()
+    public Car(IDriveMode driveMode, ICarState carState)
     {
-        Console.Write("Activating brakes: ");
-        _brakingBehavior.Brake();
+        _driveMode = driveMode;
+        _state = carState;
+    }
+    
+    public void AddWatcher(IWatcher watcher) => _notifier.AddWatcher(watcher);
+    public void RemoveWatcher(IWatcher watcher) => _notifier.RemoveWatcher(watcher);
+    
+    public void SetDriveMode(IDriveMode mode)
+    {
+        _driveMode = mode;
+        _notifier.SendMessage($"Mode: {mode.GetType().Name}");
+    }
+    
+    public void SetState(ICarState state) => _state = state;
+    
+    public void Start()
+    {
+        _notifier.SendMessage("Start requested");
+        _state.Start(this);
+    }
+    
+    public void Stop()
+    {
+        _notifier.SendMessage("Stop requested");
+        _state.Stop(this);
+    }
+    
+    public void Accelerate()
+    {
+        _notifier.SendMessage("Accelerating");
+        _driveMode.Accelerate();
     }
 }
 
-// Vehicle Class
-class Vehicle
-{
-    private VehicleEventNotifier _notifier = new VehicleEventNotifier();
-    private IBrakingBehavior _brakingBehavior;
-    
-    public Vehicle(IBrakingBehavior brakingBehavior)
-    {
-        _brakingBehavior = brakingBehavior;
-        // Add default observer
-        _notifier.Attach(new Dashboard());
-    }
-    
-    public void AddObserver(IObserver observer) => _notifier.Attach(observer);
-    
-    public void StartIgnition()
-    {
-        new IgnitionCommand(_notifier).Execute();
-    }
-    
-    public void ApplyBrakes()
-    {
-        new BrakeCommand(_brakingBehavior).Execute();
-    }
-    
-    public void SetBrakingBehavior(IBrakingBehavior brakingBehavior)
-    {
-        _brakingBehavior = brakingBehavior;
-    }
-}
-
-// Demo
 class Program
 {
     static void Main()
-    {
-        // Create vehicles with different braking strategies
-        Vehicle sedan = new Vehicle(new StandardBraking());
-        Vehicle suv = new Vehicle(new ABSBraking());
-        
-        // Add additional observer to SUV
-        suv.AddObserver(new Dashboard()); // Second dashboard
+    {     
+        var car = new Car(new EcoMode(), new ParkedState());
 
-        Console.WriteLine("Sedan operations:");
-        sedan.StartIgnition();
-        sedan.ApplyBrakes();
+        Console.WriteLine("Observer Pattern");
+        car.AddWatcher(new Dashboard());
+        car.AddWatcher(new Telemetry());
         
-        Console.WriteLine("\nSUV operations:");
-        suv.StartIgnition();
-        suv.ApplyBrakes();
+        Console.WriteLine("State Pattern");
+        car.Start();
+        car.Start();
+        car.Stop();
+        car.Stop();
         
-        // Change braking behavior at runtime
-        Console.WriteLine("\nSedan with ABS braking:");
-        sedan.SetBrakingBehavior(new ABSBraking());
-        sedan.ApplyBrakes();
+        Console.WriteLine("\nStrategy Pattern");
+        car.Accelerate();
+        car.SetDriveMode(new SportMode());
+        car.Accelerate();
     }
 }

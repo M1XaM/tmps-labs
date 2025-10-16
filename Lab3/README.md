@@ -10,76 +10,170 @@
 
 ## Used Design Patterns: 
 - Observer Pattern
+- State Pattern
 - Strategy Pattern
-- Command Pattern
 
 ## Implementation
 
+This project demonstrates three behavioral design patterns in the context of a vehicle system. The implementation shows how these patterns work together to create a flexible and maintainable car control system.
+
 ### Observer Pattern
-The Observer pattern defines a one-to-many dependency between objects so that when one object changes state, all its dependents are notified automatically. VehicleEventNotifier manages observers that get notified of vehicle events.
+The Observer pattern defines a one-to-many dependency between objects so that when one object changes state, all its dependents are notified automatically. The `Notifier` class manages observers (`IWatcher` implementations) that get notified of vehicle events.
+
 ```csharp
-class VehicleEventNotifier
+interface IWatcher
 {
-    private List<IObserver> _observers = new List<IObserver>();
+    void Notify(string message);
+}
+
+class Notifier
+{
+    private List<IWatcher> _watchers = new List<IWatcher>();
     
-    public void Attach(IObserver observer) => _observers.Add(observer);
+    public void AddWatcher(IWatcher watcher) => _watchers.Add(watcher);
+    public void RemoveWatcher(IWatcher watcher) => _watchers.Remove(watcher);
     
-    public void Notify(string eventType)
+    public void SendMessage(string message)
     {
-        foreach (var observer in _observers)
-            observer.Update(eventType);
+        foreach (var watcher in _watchers)
+            watcher.Notify(message);
     }
 }
 
-class Dashboard : IObserver
+class Dashboard : IWatcher
 {
-    public void Update(string eventType)
+    public void Notify(string message) => Console.WriteLine($"Dashboard: {message}");
+}
+
+class Telemetry : IWatcher
+{
+    public void Notify(string message) => Console.WriteLine($"Telemetry: {message}");
+}
+```
+
+### State Pattern
+The State pattern allows an object to alter its behavior when its internal state changes. The `Car` class uses `ICarState` implementations to manage different vehicle states (Parked and Running), ensuring proper state transitions.
+
+```csharp
+interface ICarState
+{
+    void Start(Car car);
+    void Stop(Car car);
+}
+
+class ParkedState : ICarState
+{
+    public void Start(Car car)
     {
-        Console.WriteLine($"Dashboard: Vehicle {eventType}");
+        Console.WriteLine("Starting from parked...");
+        car.SetState(new RunningState());
+    }
+    
+    public void Stop(Car car)
+    {
+        Console.WriteLine("Already parked!");
+    }
+}
+
+class RunningState : ICarState
+{
+    public void Start(Car car)
+    {
+        Console.WriteLine("Already running!");
+    }
+    
+    public void Stop(Car car)
+    {
+        Console.WriteLine("Stopping...");
+        car.SetState(new ParkedState());
     }
 }
 ```
 
 ### Strategy Pattern
-The Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. IBrakingBehavior allows different braking strategies to be selected at runtime.
+The Strategy pattern defines a family of algorithms, encapsulates each one, and makes them interchangeable. `IDriveMode` allows different driving strategies (Eco and Sport modes) to be selected at runtime.
+
 ```csharp
-interface IBrakingBehavior
+interface IDriveMode
 {
-    void Brake();
+    void Accelerate();
 }
 
-class StandardBraking : IBrakingBehavior
+class EcoMode : IDriveMode
 {
-    public void Brake() => Console.WriteLine("Standard braking with 70% force");
+    public void Accelerate() => Console.WriteLine("Eco: Slow acceleration");
 }
 
-class ABSBraking : IBrakingBehavior
+class SportMode : IDriveMode
 {
-    public void Brake() => Console.WriteLine("ABS braking with pulsating brakes");
+    public void Accelerate() => Console.WriteLine("Sport: Fast acceleration");
 }
 ```
 
-### Command Pattern
-The Command pattern encapsulates a request as an object, thereby allowing for parameterization of clients with different requests. ICommand encapsulates vehicle operations as executable commands.
-```csharp
-interface ICommand
-{
-    void Execute();
-}
+## Integration Example
+The `Car` class integrates all three patterns:
+- Uses **Strategy** for drive modes
+- Uses **State** for vehicle state management  
+- Uses **Observer** for notification system
 
-class IgnitionCommand : ICommand
+```csharp
+class Car
 {
-    private VehicleEventNotifier _notifier;
+    private IDriveMode _driveMode;
+    private ICarState _state;
+    private Notifier _notifier = new Notifier();
     
-    public IgnitionCommand(VehicleEventNotifier notifier) => _notifier = notifier;
-    
-    public void Execute()
+    public Car(IDriveMode driveMode, ICarState carState)
     {
-        Console.WriteLine("Starting ignition...");
-        _notifier.Notify("ignition started");
+        _driveMode = driveMode;
+        _state = carState;
+    }
+    
+    public void AddWatcher(IWatcher watcher) => _notifier.AddWatcher(watcher);
+    public void SetDriveMode(IDriveMode mode) => _driveMode = mode;
+    public void SetState(ICarState state) => _state = state;
+    
+    public void Start()
+    {
+        _notifier.SendMessage("Start requested");
+        _state.Start(this);
+    }
+    
+    public void Accelerate()
+    {
+        _notifier.SendMessage("Accelerating");
+        _driveMode.Accelerate();
     }
 }
 ```
 
+## Program Output
+```
+Observer Pattern
+State Pattern
+Dashboard: Start requested
+Telemetry: Start requested
+Starting from parked...
+Dashboard: Start requested
+Telemetry: Start requested
+Already running!
+Dashboard: Stop requested
+Telemetry: Stop requested
+Stopping...
+Dashboard: Stop requested
+Telemetry: Stop requested
+Already parked!
+
+Strategy Pattern
+Dashboard: Accelerating
+Telemetry: Accelerating
+Eco: Slow acceleration
+Dashboard: Mode: SportMode
+Telemetry: Mode: SportMode
+Dashboard: Accelerating
+Telemetry: Accelerating
+Sport: Fast acceleration
+```
+
 ## Results
-<img src="img/result.png">
+<img src="img/result.png"/>
