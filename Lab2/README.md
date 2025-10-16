@@ -11,7 +11,7 @@
 ## Used Design Patterns:
 - Adapter Pattern
 - Composite Pattern
-- Decorator Pattern
+- Flyweight Pattern
 
 ## Implementation
 
@@ -37,50 +37,51 @@ public class ElectricAdapter : IElectricVehicle
 ```
 
 ### Composite Pattern
-The Composite pattern treats individual objects and compositions uniformly. VehicleAssembly can contain both VehicleParts and other VehicleAssemblies.  
+The Composite pattern treats individual objects and compositions uniformly. The Car class can contain multiple CarComponent objects and calculate the total cost.
 
 ```csharp
-public class VehicleAssembly : VehicleComponent
+public class Car
 {
-    private readonly List<VehicleComponent> _children = new List<VehicleComponent>();
+    private readonly List<CarComponent> _components = new List<CarComponent>();
     
-    public void Add(VehicleComponent component)
+    public void AddComponent(string name, double cost)
     {
-        _children.Add(component);
+        var component = CarComponent.GetComponent(name, cost);
+        _components.Add(component);
     }
 
-    public override void DisplayInfo(int depth = 0)
+    public void DisplayInfo()
     {
-        Console.WriteLine(new string('-', depth) + $" Assembly: {_name}");
-        foreach (var component in _children)
+        Console.WriteLine($"Car: {Model}");
+        Console.WriteLine("Components:");
+        foreach (var component in _components)
         {
-            component.DisplayInfo(depth + 2);
+            component.Display();
         }
-    }
-
-```
-  
-
-### Decorator Pattern
-The Decorator pattern dynamically adds responsibilities to objects. VehicleDecorator allows adding features like sunroof and premium sound system to a basic vehicle.
-
-```csharp
-public class SunroofDecorator : VehicleDecorator
-{
-    public SunroofDecorator(Vehicle vehicle) : base(vehicle) { }
-
-    public override string GetDescription()
-    {
-        return _vehicle.GetDescription() + " + Sunroof";
-    }
-
-    public override double GetCost()
-    {
-        return _vehicle.GetCost() + 1500;
+        Console.WriteLine($"Total Cost: ${GetTotalCost()}");
     }
 }
 ```
-  
+
+### Flyweight Pattern
+The Flyweight pattern minimizes memory usage by sharing common object state. CarComponent stores shared components in a dictionary to avoid duplication.
+
+```csharp
+public class CarComponent
+{
+    private static readonly Dictionary<string, CarComponent> _components = 
+        new Dictionary<string, CarComponent>();
+
+    public static CarComponent GetComponent(string name, double cost)
+    {
+        if (!_components.ContainsKey(name))
+        {
+            _components[name] = new CarComponent(name, cost);
+        }
+        return _components[name];
+    }
+}
+```
 
 ## Results
-<img src="img/result.png">
+<img src="img/result.png"/>

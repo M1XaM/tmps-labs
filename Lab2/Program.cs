@@ -1,20 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-// Adapter Pattern
-// Existing interface
-public interface IElectricVehicle
-{
-    void Charge();
-}
-
-// New interface that needs adapting
 public interface ICombustionEngine
 {
     void Refuel();
 }
 
-// Adaptee class
 public class GasolineCar : ICombustionEngine
 {
     public void Refuel()
@@ -23,7 +14,12 @@ public class GasolineCar : ICombustionEngine
     }
 }
 
-// Adapter
+// Adapter Pattern
+public interface IElectricVehicle
+{
+    void Charge();
+}
+
 public class ElectricAdapter : IElectricVehicle
 {
     private readonly ICombustionEngine _combustionEngine;
@@ -40,153 +36,100 @@ public class ElectricAdapter : IElectricVehicle
     }
 }
 
-// Composite Pattern
-public abstract class VehicleComponent
+// Flyweight Pattern
+public class CarComponent
 {
-    public abstract void DisplayInfo(int depth = 0);
-}
+    private static readonly Dictionary<string, CarComponent> _components = 
+        new Dictionary<string, CarComponent>();
 
-// Leaf class
-public class VehiclePart : VehicleComponent
-{
-    private readonly string _name;
+    public string Name { get; }
+    public double Cost { get; }
 
-    public VehiclePart(string name)
+    private CarComponent(string name, double cost)
     {
-        _name = name;
+        Name = name;
+        Cost = cost;
     }
 
-    public override void DisplayInfo(int depth = 0)
+    public static CarComponent GetComponent(string name, double cost)
     {
-        Console.WriteLine(new string('-', depth) + $" Part: {_name}");
-    }
-}
-
-// Composite class
-public class VehicleAssembly : VehicleComponent
-{
-    private readonly List<VehicleComponent> _children = new List<VehicleComponent>();
-    private readonly string _name;
-
-    public VehicleAssembly(string name)
-    {
-        _name = name;
-    }
-
-    public void Add(VehicleComponent component)
-    {
-        _children.Add(component);
-    }
-
-    public override void DisplayInfo(int depth = 0)
-    {
-        Console.WriteLine(new string('-', depth) + $" Assembly: {_name}");
-        foreach (var component in _children)
+        if (!_components.ContainsKey(name))
         {
-            component.DisplayInfo(depth + 2);
+            _components[name] = new CarComponent(name, cost);
+        }
+        return _components[name];
+    }
+
+    public void Display()
+    {
+        Console.WriteLine($"- {Name} (${Cost})");
+    }
+
+    public static void DisplayAll()
+    {
+        foreach (var component in _components)
+        {
+            Console.WriteLine($"{component.Value.Name}");
         }
     }
 }
 
-// Decorator Pattern
-public abstract class Vehicle
+// Composite Pattern
+public class Car
 {
-    public abstract string GetDescription();
-    public abstract double GetCost();
-}
+    private readonly List<CarComponent> _components = new List<CarComponent>();
+    public string Model { get; }
 
-// Concrete component
-public class BasicCar : Vehicle
-{
-    public override string GetDescription()
+    public Car(string model)
     {
-        return "Basic Car";
+        Model = model;
     }
 
-    public override double GetCost()
+    public void AddComponent(string name, double cost)
     {
-        return 20000;
-    }
-}
-
-// Decorator base
-public abstract class VehicleDecorator : Vehicle
-{
-    protected Vehicle _vehicle;
-
-    protected VehicleDecorator(Vehicle vehicle)
-    {
-        _vehicle = vehicle;
+        var component = CarComponent.GetComponent(name, cost);
+        _components.Add(component);
     }
 
-    public override string GetDescription()
+    public void DisplayInfo()
     {
-        return _vehicle.GetDescription();
+        Console.WriteLine($"Car: {Model}");
+        Console.WriteLine("Components:");
+        foreach (var component in _components)
+        {
+            component.Display();
+        }
+        Console.WriteLine($"Total Cost: ${GetTotalCost()}");
     }
 
-    public override double GetCost()
+    public double GetTotalCost()
     {
-        return _vehicle.GetCost();
-    }
-}
-
-// Concrete decorators
-public class SunroofDecorator : VehicleDecorator
-{
-    public SunroofDecorator(Vehicle vehicle) : base(vehicle) { }
-
-    public override string GetDescription()
-    {
-        return _vehicle.GetDescription() + " + Sunroof";
-    }
-
-    public override double GetCost()
-    {
-        return _vehicle.GetCost() + 1500;
-    }
-}
-
-public class PremiumSoundDecorator : VehicleDecorator
-{
-    public PremiumSoundDecorator(Vehicle vehicle) : base(vehicle) { }
-
-    public override string GetDescription()
-    {
-        return _vehicle.GetDescription() + " + Premium Sound";
-    }
-
-    public override double GetCost()
-    {
-        return _vehicle.GetCost() + 800;
+        double total = 0;
+        foreach (var component in _components)
+        {
+            total += component.Cost;
+        }
+        return total;
     }
 }
 
 class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
-        Console.WriteLine("ADAPTER PATTERN DEMO:");
+        Console.WriteLine("Adapter Pattern");
         IElectricVehicle adaptedGasCar = new ElectricAdapter(new GasolineCar());
         adaptedGasCar.Charge();
 
-        Console.WriteLine("\nCOMPOSITE PATTERN DEMO:");
-        var engine = new VehicleAssembly("Engine");
-        engine.Add(new VehiclePart("Pistons"));
-        engine.Add(new VehiclePart("Crankshaft"));
+        Console.WriteLine("\nFlyWeight and Composite Pattern");
+        var sedan = new Car("Sedan");
+        sedan.AddComponent("Door", 800);
+        sedan.AddComponent("Door", 800);
+        sedan.AddComponent("Wheels", 400);
+        sedan.AddComponent("Wheels", 400);
+        sedan.DisplayInfo();
 
-        var chassis = new VehicleAssembly("Chassis");
-        chassis.Add(new VehiclePart("Frame"));
-        chassis.Add(engine);
-
-        chassis.DisplayInfo();
-
-        Console.WriteLine("\nDECORATOR PATTERN DEMO:");
-        Vehicle myCar = new BasicCar();
-        myCar = new SunroofDecorator(myCar);
-        myCar = new PremiumSoundDecorator(myCar);
-
-        Console.WriteLine($"{myCar.GetDescription()} costs ${myCar.GetCost()}");
-
-        Console.ReadKey();
+        Console.WriteLine("\nActual FlyWeight Objects");
+        CarComponent.DisplayAll();
     }
 }
