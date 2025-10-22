@@ -8,14 +8,23 @@ interface IVehicle
 
 class Car : IVehicle
 {
+    public string Name { get; set; }
+
+    public Car() { }
+
+    public Car(string name)
+    {
+        Name = name;
+    }
+
     public void Move()
     {
-        Console.WriteLine("The car is driving on the road.");
+        Console.WriteLine($"The car '{Name}' is driving on the road.");
     }
     
     public IVehicle Clone()
     {
-        return new Car(); // simple clone
+        return new Car(this.Name);
     }
 }
 
@@ -28,19 +37,19 @@ class Bicycle : IVehicle
     
     public IVehicle Clone()
     {
-        return new Bicycle(); // simple clone
+        return new Bicycle();
     }
 }
 
-// 1. Factory Pattern
+// Factory Pattern
 class VehicleFactory
 {
-    public IVehicle CreateVehicle(string type)
+    public IVehicle CreateVehicle(string type, string name = "")
     {
         switch (type.ToLower())
         {
             case "car":
-                return new Car();
+                return new Car(name);
             case "bicycle":
                 return new Bicycle();
             default:
@@ -49,7 +58,7 @@ class VehicleFactory
     }
 }
 
-// 2. Singleton Pattern
+// Singleton Pattern
 class VehicleLogger
 {
     private static VehicleLogger _instance;
@@ -71,30 +80,13 @@ class VehicleLogger
     }
 }
 
-// 3. Prototype Pattern
-class VehiclePrototype
-{
-    private IVehicle _carPrototype = new Car();
-    private IVehicle _bikePrototype = new Bicycle();
-    
-    public IVehicle CreateCar()
-    {
-        return _carPrototype.Clone();
-    }
-    
-    public IVehicle CreateBicycle()
-    {
-        return _bikePrototype.Clone();
-    }
-}
-
 class Program
 {
     static void Main()
     {
         Console.WriteLine("Factory Pattern");
         VehicleFactory factory = new VehicleFactory();
-        IVehicle factoryCar = factory.CreateVehicle("car");
+        IVehicle factoryCar = factory.CreateVehicle("car", "Tesla");
         IVehicle factoryBike = factory.CreateVehicle("bicycle");
         factoryCar.Move();
         factoryBike.Move();
@@ -104,8 +96,8 @@ class Program
         logger.Log("Message from singleton object");
 
         Console.WriteLine("\nPrototype Pattern");
-        IVehicle originalCar = new Car();
-        IVehicle anotherCar = originalCar.Clone();
+        Car originalCar = new Car("Ferrari");
+        Car anotherCar = (Car)originalCar.Clone();
         
         originalCar.Move();
         anotherCar.Move();
