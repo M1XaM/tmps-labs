@@ -72,6 +72,15 @@ interface IVehicle
 
 class Car : IVehicle
 {
+    public string Name { get; set; }
+
+    public Car() { }
+
+    public Car(string name)
+    {
+        Name = name;
+    }
+
     public void Move()
     {
         Console.WriteLine("The car is driving on the road.");
@@ -79,23 +88,32 @@ class Car : IVehicle
     
     public IVehicle Clone()
     {
-        return new Car(); // Create new instance as clone
+        return new Car(this.Name); // Create new instance as clone
     }
 }
 
 class VehiclePrototype
 {
-    private IVehicle _carPrototype = new Car();
-    private IVehicle _bikePrototype = new Bicycle();
-    
-    public IVehicle CreateCar() => _carPrototype.Clone();
-    public IVehicle CreateBicycle() => _bikePrototype.Clone();
+    public static IVehicle Clone(IVehicle vehicle, string name = null)
+    {
+        if (vehicle is Car car)
+        {
+            return new Car(name ?? car.Name);
+        }
+        else if (vehicle is Bicycle bicycle)
+        {
+            return new Bicycle(name ?? bicycle.Name);
+        }
+        else
+        {
+            throw new ArgumentException("Unknown vehicle type for cloning.");
+        }
+    }
 }
 
 // Usage
-VehiclePrototype prototype = new VehiclePrototype();
-IVehicle clonedCar = prototype.CreateCar();
-IVehicle clonedBike = prototype.CreateBicycle();
+Car originalCar = new Car("Ferrari");
+Car anotherCar = (Car)VehiclePrototype.Clone(originalCar);
 ```
 
 ## Results

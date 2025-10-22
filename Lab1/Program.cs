@@ -19,7 +19,7 @@ class Car : IVehicle
 
     public void Move()
     {
-        Console.WriteLine($"The car '{Name}' is driving on the road.");
+        Console.WriteLine($"The car {Name} is driving on the road.");
     }
     
     public IVehicle Clone()
@@ -30,14 +30,23 @@ class Car : IVehicle
 
 class Bicycle : IVehicle
 {
+    public string Name { get; set; }
+
+    public Bicycle() { }
+
+    public Bicycle(string name)
+    {
+        Name = name;
+    }
+
     public void Move()
     {
-        Console.WriteLine("The bicycle is pedaling along the path.");
+        Console.WriteLine($"The bicycle {Name} is pedaling along the path.");
     }
     
     public IVehicle Clone()
     {
-        return new Bicycle();
+        return new Bicycle(this.Name);
     }
 }
 
@@ -51,7 +60,7 @@ class VehicleFactory
             case "car":
                 return new Car(name);
             case "bicycle":
-                return new Bicycle();
+                return new Bicycle(name);
             default:
                 throw new ArgumentException("Invalid vehicle type");
         }
@@ -80,6 +89,25 @@ class VehicleLogger
     }
 }
 
+class VehiclePrototype
+{
+    public static IVehicle Clone(IVehicle vehicle, string name = null)
+    {
+        if (vehicle is Car car)
+        {
+            return new Car(name ?? car.Name);
+        }
+        else if (vehicle is Bicycle bicycle)
+        {
+            return new Bicycle(name ?? bicycle.Name);
+        }
+        else
+        {
+            throw new ArgumentException("Unknown vehicle type for cloning.");
+        }
+    }
+}
+
 class Program
 {
     static void Main()
@@ -87,7 +115,7 @@ class Program
         Console.WriteLine("Factory Pattern");
         VehicleFactory factory = new VehicleFactory();
         IVehicle factoryCar = factory.CreateVehicle("car", "Tesla");
-        IVehicle factoryBike = factory.CreateVehicle("bicycle");
+        IVehicle factoryBike = factory.CreateVehicle("bicycle", "Bike1");
         factoryCar.Move();
         factoryBike.Move();
 
@@ -97,7 +125,7 @@ class Program
 
         Console.WriteLine("\nPrototype Pattern");
         Car originalCar = new Car("Ferrari");
-        Car anotherCar = (Car)originalCar.Clone();
+        Car anotherCar = (Car)VehiclePrototype.Clone(originalCar);
         
         originalCar.Move();
         anotherCar.Move();
