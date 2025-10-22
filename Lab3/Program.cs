@@ -23,12 +23,12 @@ interface IWatcher
 
 class Dashboard : IWatcher
 {
-    public void Notify(string message) => Console.WriteLine($"Dashboard: {message}");
+    public void Notify(string message) => Console.WriteLine($" - Dashboard: {message}");
 }
 
 class Telemetry : IWatcher
 {
-    public void Notify(string message) => Console.WriteLine($"Telemetry: {message}");
+    public void Notify(string message) => Console.WriteLine($" - Telemetry: {message}");
 }
 
 class LoggingSystem : IWatcher
@@ -121,8 +121,16 @@ class Car
     
     public void Accelerate()
     {
-        _notifier.SendMessage("Accelerating");
-        _driveMode.Accelerate();
+        if (_state is RunningState)
+        {
+            _notifier.SendMessage("Accelerating");
+            _driveMode.Accelerate();
+        }
+        else
+        {
+            _notifier.SendMessage("Cannot accelerate while stopped!");
+            Console.WriteLine("Car is stopped. Cannot accelerate.");
+        }
     }
 }
 
@@ -132,17 +140,20 @@ class Program
     {     
         var car = new Car(new EcoMode(), new ParkedState());
 
-        Console.WriteLine("Observer Pattern");
+        // Observer Pattern
         car.AddWatcher(new Dashboard());
         car.AddWatcher(new Telemetry());
         
         Console.WriteLine("State Pattern");
         car.Start();
+        car.Accelerate();
         car.Start();
         car.Stop();
+        car.Accelerate();
         car.Stop();
         
         Console.WriteLine("\nStrategy Pattern");
+        car.Start();
         car.Accelerate();
         car.SetDriveMode(new SportMode());
         car.Accelerate();
