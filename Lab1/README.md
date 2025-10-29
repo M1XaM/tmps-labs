@@ -9,31 +9,40 @@
 - Implement at least 3 Creational Design Patterns for the specific domain;
 
 ## Used Design Patterns:
-- Factory Pattern - For creating vehicles without specifying exact classes
-- Singleton Pattern - For ensuring only one instance of logger exists
-- Prototype Pattern - For creating new vehicles by cloning existing prototypes
+- **Factory Pattern** - For creating vehicles using a registry-based approach that follows Open/Closed Principle
+- **Singleton Pattern** - For ensuring only one instance of logger exists
+- **Prototype Pattern** - For creating new vehicles by cloning existing prototypes
 
 ## Implementation
 
 ### Factory Pattern
-Creates vehicles based on type without exposing instantiation logic.
+Creates vehicles using a flexible registry system that allows easy extension without modifying existing code.
 
 ```csharp
 class VehicleFactory
 {
-    public IVehicle CreateVehicle(string type)
+    private readonly Dictionary<string, Func<string, IVehicle>> _registry = new();
+
+    public void RegisterVehicle(string type, Func<string, IVehicle> creator)
     {
-        switch (type.ToLower())
-        {
-            case "car":
-                return new Car();
-            case "bicycle":
-                return new Bicycle();
-            default:
-                throw new ArgumentException("Invalid vehicle type");
-        }
+        _registry[type.ToLower()] = creator;
+    }
+
+    public IVehicle CreateVehicle(string type, string name = "")
+    {
+        if (_registry.TryGetValue(type.ToLower(), out var creator))
+            return creator(name);
+        throw new ArgumentException($"Invalid vehicle type: {type}");
     }
 }
+
+// Usage
+VehicleFactory factory = new VehicleFactory();
+factory.RegisterVehicle("car", name => new Car(name));
+factory.RegisterVehicle("bicycle", name => new Bicycle(name));
+
+IVehicle car = factory.CreateVehicle("car", "Tesla");
+IVehicle bicycle = factory.CreateVehicle("bicycle", "SuperBike");
 ```
 
 ### Singleton Pattern
@@ -43,6 +52,8 @@ Ensures only one instance of VehicleLogger exists throughout the application.
 class VehicleLogger
 {
     private static VehicleLogger _instance;
+    
+    private VehicleLogger() { }
     
     public static VehicleLogger Instance
     {
@@ -58,19 +69,22 @@ class VehicleLogger
         Console.WriteLine($"Log: {message}");
     }
 }
+
+// Usage
+VehicleLogger logger = VehicleLogger.Instance;
+logger.Log("Message from singleton object");
 ```
 
 ### Prototype Pattern
-Creates new objects by cloning existing prototypes, avoiding expensive creation logic.
+Creates new objects by cloning existing prototypes, avoiding expensive creation logic. Each vehicle implements its own cloning logic.
 
 ```csharp
-interface IVehicle
+interface IVehiclePrototype
 {
-    void Move();
     IVehicle Clone();
 }
 
-class Car : IVehicle
+class Car : IVehicle, IVehiclePrototype
 {
     public string Name { get; set; }
 
@@ -83,37 +97,42 @@ class Car : IVehicle
 
     public void Move()
     {
-        Console.WriteLine("The car is driving on the road.");
+        Console.WriteLine($"The car {Name} is driving on the road.");
     }
     
     public IVehicle Clone()
     {
-        return new Car(this.Name); // Create new instance as clone
+        return new Car(this.Name);
     }
 }
 
-class VehiclePrototype
+class Bicycle : IVehicle, IVehiclePrototype
 {
-    public static IVehicle Clone(IVehicle vehicle, string name = null)
+    public string Name { get; set; }
+
+    public Bicycle() { }
+
+    public Bicycle(string name)
     {
-        if (vehicle is Car car)
-        {
-            return new Car(name ?? car.Name);
-        }
-        else if (vehicle is Bicycle bicycle)
-        {
-            return new Bicycle(name ?? bicycle.Name);
-        }
-        else
-        {
-            throw new ArgumentException("Unknown vehicle type for cloning.");
-        }
+        Name = name;
+    }
+
+    public void Move()
+    {
+        Console.WriteLine($"The bicycle {Name} is pedaling along the path.");
+    }
+    
+    public IVehicle Clone()
+    {
+        return new Bicycle(this.Name);
     }
 }
 
 // Usage
 Car originalCar = new Car("Ferrari");
-Car anotherCar = (Car)VehiclePrototype.Clone(originalCar);
+IVehicle anotherCar = originalCar.Clone();
+originalCar.Move();
+anotherCar.Move();
 ```
 
 ## Results

@@ -1,12 +1,17 @@
 ﻿using System;
 
-interface IVehicle
+// Prototype Pattern
+interface IVehiclePrototype
 {
-    void Move();
     IVehicle Clone();
 }
 
-class Car : IVehicle
+interface IVehicle
+{
+    void Move();
+}
+
+class Car : IVehicle, IVehiclePrototype
 {
     public string Name { get; set; }
 
@@ -28,7 +33,7 @@ class Car : IVehicle
     }
 }
 
-class Bicycle : IVehicle
+class Bicycle : IVehicle, IVehiclePrototype
 {
     public string Name { get; set; }
 
@@ -53,17 +58,18 @@ class Bicycle : IVehicle
 // Factory Pattern
 class VehicleFactory
 {
+    private readonly Dictionary<string, Func<string, IVehicle>> _registry = new();
+
+    public void RegisterVehicle(string type, Func<string, IVehicle> creator)
+    {
+        _registry[type.ToLower()] = creator;
+    }
+
     public IVehicle CreateVehicle(string type, string name = "")
     {
-        switch (type.ToLower())
-        {
-            case "car":
-                return new Car(name);
-            case "bicycle":
-                return new Bicycle(name);
-            default:
-                throw new ArgumentException("Invalid vehicle type");
-        }
+        if (_registry.TryGetValue(type.ToLower(), out var creator))
+            return creator(name);
+        throw new ArgumentException($"Invalid vehicle type: {type}");
     }
 }
 
@@ -89,33 +95,17 @@ class VehicleLogger
     }
 }
 
-class VehiclePrototype
-{
-    public static IVehicle Clone(IVehicle vehicle, string name = null)
-    {
-        if (vehicle is Car car)
-        {
-            return new Car(name ?? car.Name);
-        }
-        else if (vehicle is Bicycle bicycle)
-        {
-            return new Bicycle(name ?? bicycle.Name);
-        }
-        else
-        {
-            throw new ArgumentException("Unknown vehicle type for cloning.");
-        }
-    }
-}
-
 class Program
 {
     static void Main()
     {
         Console.WriteLine("Factory Pattern");
         VehicleFactory factory = new VehicleFactory();
+        factory.RegisterVehicle("car", name => new Car(name));
+        factory.RegisterVehicle("bicycle", name => new Bicycle(name));
+
         IVehicle factoryCar = factory.CreateVehicle("car", "Tesla");
-        IVehicle factoryBike = factory.CreateVehicle("bicycle", "Bike1");
+        IVehicle factoryBike = factory.CreateVehicle("bicycle", "SuperBike");
         factoryCar.Move();
         factoryBike.Move();
 
@@ -125,7 +115,7 @@ class Program
 
         Console.WriteLine("\nPrototype Pattern");
         Car originalCar = new Car("Ferrari");
-        Car anotherCar = (Car)VehiclePrototype.Clone(originalCar);
+        IVehicle anotherCar = originalCar.Clone();
         
         originalCar.Move();
         anotherCar.Move();
