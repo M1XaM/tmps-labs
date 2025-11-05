@@ -36,14 +36,16 @@ public class ElectricAdapter : IElectricVehicle
     }
 }
 
-// Flyweight Pattern
+// Flyweight and Composite Pattern
 public class CarComponent
 {
-    private static readonly Dictionary<string, CarComponent> _components = 
+    private static readonly Dictionary<string, CarComponent> _components =
         new Dictionary<string, CarComponent>();
 
     public string Name { get; }
     public double Cost { get; }
+
+    private readonly List<CarComponent> _children = new List<CarComponent>();
 
     private CarComponent(string name, double cost)
     {
@@ -60,9 +62,42 @@ public class CarComponent
         return _components[name];
     }
 
+    public void AddSubcomponent(string name, double cost)
+    {
+        var child = GetComponent(name, cost);
+        _children.Add(child);
+    }
+
+    public void AddSubcomponent(CarComponent child)
+    {
+        if (child == null) throw new ArgumentNullException(nameof(child));
+        _children.Add(child);
+    }
+
     public void Display()
     {
         Console.WriteLine($"- {Name} (${Cost})");
+    }
+
+    public void DisplayRecursive(int indent = 0)
+    {
+        var pad = new string(' ', indent * 2);
+        Console.WriteLine($"{pad}- {Name} (${Cost})");
+        foreach (var child in _children)
+        {
+            child.DisplayRecursive(indent + 1);
+        }
+    }
+
+
+    public double GetTotalCostRecursive()
+    {
+        double total = Cost;
+        foreach (var child in _children)
+        {
+            total += child.GetTotalCostRecursive();
+        }
+        return total;
     }
 
     public static void DisplayAll()
@@ -74,7 +109,6 @@ public class CarComponent
     }
 }
 
-// Composite Pattern
 public class Car
 {
     private readonly List<CarComponent> _components = new List<CarComponent>();
@@ -91,13 +125,19 @@ public class Car
         _components.Add(component);
     }
 
+    public void AddComponent(CarComponent component)
+    {
+        if (component == null) throw new ArgumentNullException(nameof(component));
+        _components.Add(component);
+    }
+
     public void DisplayInfo()
     {
         Console.WriteLine($"Car: {Model}");
         Console.WriteLine("Components:");
         foreach (var component in _components)
         {
-            component.Display();
+            component.DisplayRecursive(1);
         }
         Console.WriteLine($"Total Cost: ${GetTotalCost()}");
     }
@@ -107,7 +147,7 @@ public class Car
         double total = 0;
         foreach (var component in _components)
         {
-            total += component.Cost;
+            total += component.GetTotalCostRecursive();
         }
         return total;
     }
@@ -117,19 +157,25 @@ class Program
 {
     static void Main()
     {
-        Console.WriteLine("Adapter Pattern");
+        Console.WriteLine("Adapter Pattern:");
         IElectricVehicle adaptedGasCar = new ElectricAdapter(new GasolineCar());
         adaptedGasCar.Charge();
 
-        Console.WriteLine("\nFlyWeight and Composite Pattern");
+        Console.WriteLine("\nFlyWeight and Composite Pattern:");
         var sedan = new Car("Sedan");
+
         sedan.AddComponent("Door", 800);
         sedan.AddComponent("Door", 800);
         sedan.AddComponent("Wheels", 400);
         sedan.AddComponent("Wheels", 400);
+
+        var door = CarComponent.GetComponent("Door", 800);
+        door.AddSubcomponent("Window", 120);
+        door.AddSubcomponent("Hinge", 15);
+
         sedan.DisplayInfo();
 
-        Console.WriteLine("\nActual FlyWeight Objects");
+        Console.WriteLine("\nActual FlyWeight Objects:");
         CarComponent.DisplayAll();
     }
 }
